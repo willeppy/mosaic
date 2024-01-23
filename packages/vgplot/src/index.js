@@ -15,7 +15,7 @@ export {
 } from '@uwdata/mosaic-inputs';
 
 export {
-  Query, agg, sql, column, literal,
+  Query, fromJoinDistinct, agg, sql, column, literal,
   cast, castDouble, castInteger,
   argmax, argmin, arrayAgg, avg, count, corr, covarPop, entropy,
   kurtosis, mad, max, median, min, mode, last, product, quantile,
