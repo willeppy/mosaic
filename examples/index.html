@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Mosaic Example Gallery</title>
+  <link href="./styles.css" rel="stylesheet">
+</head>
+
+<body>
+  <header>
+    <span>
+      Example:
+      <select id="exampleselect">
+        <option value="highlightMulti">highlightMulti</option>
+        <option value="highlightCube">highlightCube</option>
+        <option value="highlightToggle">highlightToggle</option>
+        <option value="printMulti">printMulti</option>
+        <option value="printCount">printCount</option>
+        <option value="noNulls">noNulls</option>
+        <option value="debugNull">debugNull</option>
+        <option value="dateChart">dateChart</option>
+        <option value="sentenceLevels" selected>sentenceLevels</option>
+      </select>
+    </span>
+  </header>
+  <div id="view"></div>
+  <script type="module">
+    import { setDatabaseConnector } from './setup.js';
+    import * as vg from "@uwdata/vgplot";
+
+    import highlightCube from './example_scripts/highlight_cube.js'
+    import highlightToggle from './example_scripts/highlight_toggle.js'
+    import highlightMulti from './example_scripts/highlight_multi.js'
+    import printMulti from './example_scripts/print_multi.js'
+    import printCount from './example_scripts/print_count.js'
+    import noNulls from './example_scripts/no_nulls.js'
+    import debugNull from './example_scripts/debug_null.js'
+    import dateChart from './example_scripts/date_chart.js'
+    import sentenceLevels from './example_scripts/sentence_levels.js'
+
+    const options = {
+      highlightCube,
+      highlightToggle,
+      highlightMulti,
+      printMulti,
+      printCount,
+      noNulls,
+      debugNull,
+      dateChart,
+      sentenceLevels
+    }
+
+    const CONN_TYPE = "wasm"; // "wasm", "socket", "rest"
+
+    const exMenu = document.querySelector('#exampleselect');
+    exMenu.addEventListener('change', load);
+
+    init();
+
+    async function init() {
+      await setDatabaseConnector(CONN_TYPE);
+      load();
+    }
+
+    async function load() {
+      let p = await options[exMenu.value](CONN_TYPE)
+      view.replaceChildren(p);
+    }
+  </script>
+</body>
+
+</html>
