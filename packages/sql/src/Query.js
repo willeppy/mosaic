@@ -120,7 +120,6 @@ export class Query {
   }
 
   from(...expr) {
-    console.log("FROM called with: expr=", expr)
     const { query } = this;
     if (expr.length === 0) {
       return query.from;
@@ -132,7 +131,6 @@ export class Query {
         } else if (typeof e === 'string') {
           list.push({ as: e, from: asRelation(e) });
         } else if (e instanceof FromJoinDistinctClause) {
-          console.log("Found a join clause in from! -- ", e)
           list.push({from: e.getJoinString() });
         } else if (e instanceof Ref) {
           list.push({ as: e.table, from: e });
@@ -143,9 +141,7 @@ export class Query {
         } else {
           for (const as in e) {
             if (e[as] instanceof FromJoinDistinctClause) {
-              let x = { from: e[as].getJoinStringTableAs(as) }
-              console.log("JoinClause with an as in from: ", x)
-              list.push(x);
+              list.push({ as: unquote(as), from: e[as].getJoinString() });
             } else {
               list.push({ as: unquote(as), from: asRelation(e[as]) });
             }
@@ -489,31 +485,40 @@ export class SetOperation {
 }
 
 export class FromJoinDistinctClause {
-  constructor({table, rightTable, joinKey}) {
-    console.log("JoinClause constructor called with: ", {table, rightTable, joinKey})
+  constructor({ table, rightTable, joinKey }) {
     this.table = table;
     this.rightTable = rightTable;
     this.joinKey = joinKey;
   }
 
-  getJoinStringTableAs(tableAs) {
-    let queryString = this.formatJoinString({table: tableAs, rightTable: this.rightTable, joinKey: this.joinKey})
-    return `${asColumn(this.table)} as ${asColumn(tableAs)} ${queryString}`
-  }
-
+  /**
+   * Constructs a pretty gnarly SQL string that joins table and rightTable on joinKey, with
+   * distinct values for rightTable and ensures only one copy of the joinKey is returned.
+   * 
+   * NOTE: if table and rightTable have the same column names (other than joinKey) then 
+   * this might be buggy (esp for downstream functions)
+   * @returns {string} SQL string
+   */
   getJoinString() {
-    let {table, rightTable, joinKey} = this;
-    let joinString = this.formatJoinString({table, rightTable, joinKey})
-    return `${asColumn(table)} ${joinString}`
+    let { table, rightTable, joinKey } = this;
+    let q2 = Query.from(rightTable).distinctOn(joinKey).select("*");
+
+    return `(SELECT ${asRelation(table)}.* EXCLUDE ${asColumn(
+      joinKey
+    )}, _joinTable.* FROM ${asColumn(
+      table
+    )} JOIN (${q2.toString()}) _joinTable ON ${asRelation(table)}.${asColumn(
+      joinKey
+    )} = _joinTable.${asColumn(joinKey)})`;
   }
 
+  /**
+   * For string rep just return the main table name to mimic the from function
+   * @returns {string} the main table.
+   */
   toString() {
-    return String(this.table)
-  }
-
-  formatJoinString({table, rightTable, joinKey}) {
-    let q2 = Query.from(rightTable).distinctOn(joinKey).select('*');
-    return `JOIN (${q2.toString()}) _joinTable ON ${asRelation(table)}.${asColumn(joinKey)} = _joinTable.${asColumn(joinKey)}`
+    console.log("toString() called on FromJoinDistinctClause, returing only the table name but the full object is: ", this)
+    return String(this.table);
   }
 }
 
