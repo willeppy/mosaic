@@ -116,17 +116,13 @@ export class Table extends MosaicClient {
   }
 
   query(filter = []) {
-    const { from, limit, offset, schema, sortColumn, sortDesc } = this;
-    console.log("[Table] Making query on the table: ", from)
-    let q =  Query.from(from)
+    const { from, limit, offset, schema, sortColumn, sortDesc } = this;    
+    return Query.from(from)
       .select(schema.map(s => s.column))
       .where(filter)
       .orderby(sortColumn ? (sortDesc ? desc(sortColumn) : sortColumn) : [])
       .limit(limit)
       .offset(offset);
-    
-    console.log("[Table] Constructured Query: ", q.toString())
-    return q
   }
 
   queryResult(data) {

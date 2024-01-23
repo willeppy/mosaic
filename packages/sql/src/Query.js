@@ -517,7 +517,7 @@ export class FromJoinDistinctClause {
    * @returns {string} the main table.
    */
   toString() {
-    console.log("toString() called on FromJoinDistinctClause, returing only the table name but the full object is: ", this)
+    // console.log("toString() called on FromJoinDistinctClause, returing only the table name but the full object is: ", this)
     return String(this.table);
   }
 }
