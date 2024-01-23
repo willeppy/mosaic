@@ -114,7 +114,13 @@ export class Query {
     return this;
   }
 
+  distinctOn(colName) {
+    this.query.distinctOn = colName;
+    return this;
+  }
+
   from(...expr) {
+    console.log("FROM called with: expr=", expr)
     const { query } = this;
     if (expr.length === 0) {
       return query.from;
@@ -125,6 +131,9 @@ export class Query {
           // do nothing
         } else if (typeof e === 'string') {
           list.push({ as: e, from: asRelation(e) });
+        } else if (e instanceof FromJoinDistinctClause) {
+          console.log("Found a join clause in from! -- ", e)
+          list.push({from: e.getJoinString() });
         } else if (e instanceof Ref) {
           list.push({ as: e.table, from: e });
         } else if (isQuery(e) || isSQLExpression(e)) {
@@ -133,7 +142,13 @@ export class Query {
           list.push({ as: unquote(e[0]), from: asRelation(e[1]) });
         } else {
           for (const as in e) {
-            list.push({ as: unquote(as), from: asRelation(e[as]) });
+            if (e[as] instanceof FromJoinDistinctClause) {
+              let x = { from: e[as].getJoinStringTableAs(as) }
+              console.log("JoinClause with an as in from: ", x)
+              list.push(x);
+            } else {
+              list.push({ as: unquote(as), from: asRelation(e[as]) });
+            }
           }
         }
       });
@@ -273,6 +288,11 @@ export class Query {
     }
   }
 
+  join(q, leftTable, leftKey, rightTable, rightKey) {
+    this.query.join = { query: q, leftTable, leftKey, rightTable, rightKey };
+    return this;
+  }
+
   get subqueries() {
     const { query, cteFor } = this;
     const ctes = (cteFor?.query || query).with;
@@ -292,7 +312,8 @@ export class Query {
   toString() {
     const {
       select, distinct, from, sample, where, groupby,
-      having, window, qualify, orderby, limit, offset, with: cte
+      having, window, qualify, orderby, limit, offset, with: cte,  
+      distinctOn, join,
     } = this.query;
 
     const sql = [];
@@ -309,7 +330,13 @@ export class Query {
         ? `${expr}`
         : `${expr} AS "${as}"`
     );
-    sql.push(`SELECT${distinct ? ' DISTINCT' : ''} ${sels.join(', ')}`);
+    let sString = 'SELECT';
+    if (distinct) {
+      sString += ' DISTINCT';
+    } else if (distinctOn) {
+      sString += ` DISTINCT ON (${asColumn(distinctOn)})`;
+    }
+    sql.push(`${sString} ${sels.join(', ')}`);
 
     // FROM
     if (from.length) {
@@ -318,6 +345,16 @@ export class Query {
         return !as || as === from.table ? rel : `${rel} AS "${as}"`;
       });
       sql.push(`FROM ${rels.join(', ')}`);
+    }
+
+    // JOIN
+    if (join) {
+      console.log("Writing joins in Query.toString()::: ", join)
+      sql.push(
+        `JOIN (${join.query.toString()}) _joinTable ON ${asRelation(
+          join.leftTable
+        )}.${asColumn(join.leftKey)} = _joinTable.${asColumn(join.rightKey)}`
+      );
     }
 
     // WHERE
@@ -450,6 +487,37 @@ export class SetOperation {
     return sql.join(' ');
   }
 }
+
+export class FromJoinDistinctClause {
+  constructor({table, rightTable, joinKey}) {
+    console.log("JoinClause constructor called with: ", {table, rightTable, joinKey})
+    this.table = table;
+    this.rightTable = rightTable;
+    this.joinKey = joinKey;
+  }
+
+  getJoinStringTableAs(tableAs) {
+    let queryString = this.formatJoinString({table: tableAs, rightTable: this.rightTable, joinKey: this.joinKey})
+    return `${asColumn(this.table)} as ${asColumn(tableAs)} ${queryString}`
+  }
+
+  getJoinString() {
+    let {table, rightTable, joinKey} = this;
+    let joinString = this.formatJoinString({table, rightTable, joinKey})
+    return `${asColumn(table)} ${joinString}`
+  }
+
+  toString() {
+    return String(this.table)
+  }
+
+  formatJoinString({table, rightTable, joinKey}) {
+    let q2 = Query.from(rightTable).distinctOn(joinKey).select('*');
+    return `JOIN (${q2.toString()}) _joinTable ON ${asRelation(table)}.${asColumn(joinKey)} = _joinTable.${asColumn(joinKey)}`
+  }
+}
+
+export const fromJoinDistinct = (...args) => new FromJoinDistinctClause(...args);
 
 export function isQuery(value) {
   return value instanceof Query || value instanceof SetOperation;

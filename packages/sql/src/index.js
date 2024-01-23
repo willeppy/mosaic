@@ -120,6 +120,7 @@ export {
 
 export {
   Query,
+  fromJoinDistinct,
   isQuery
 } from './Query.js';
 
