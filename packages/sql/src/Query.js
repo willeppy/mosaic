@@ -66,10 +66,10 @@ export class Query {
    * Retrieve current WITH common table expressions (CTEs).
    * @returns {any[]}
    *//**
-   * Add WITH common table expressions (CTEs).
-   * @param  {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add WITH common table expressions (CTEs).
+* @param  {...any} expr Expressions to add.
+* @returns {this}
+*/
   with(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -102,10 +102,10 @@ export class Query {
    * Retrieve current SELECT expressions.
    * @returns {any[]}
    *//**
-   * Add SELECT expressions.
-   * @param {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add SELECT expressions.
+* @param {...any} expr Expressions to add.
+* @returns {this}
+*/
   select(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -143,14 +143,19 @@ export class Query {
     return this;
   }
 
+  distinctOn(colName) {
+    this.query.distinctOn = colName;
+    return this;
+  }
+
   /**
    * Retrieve current from expressions.
    * @returns {any[]}
    *//**
-   * Provide table from expressions.
-   * @param  {...any} expr
-   * @returns {this}
-   */
+* Provide table from expressions.
+* @param  {...any} expr
+* @returns {this}
+*/
   from(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -163,6 +168,8 @@ export class Query {
           // do nothing
         } else if (typeof e === 'string') {
           list.push({ as: e, from: asRelation(e) });
+        } else if (e instanceof FromJoinDistinctClause) {
+          list.push({ from: e.getJoinString() });
         } else if (e instanceof Ref) {
           list.push({ as: e.table, from: e });
         } else if (isQuery(e) || isSQLExpression(e)) {
@@ -171,7 +178,11 @@ export class Query {
           list.push({ as: unquote(e[0]), from: asRelation(e[1]) });
         } else {
           for (const as in e) {
-            list.push({ as: unquote(as), from: asRelation(e[as]) });
+            if (e[as] instanceof FromJoinDistinctClause) {
+              list.push({ as: unquote(as), from: e[as].getJoinString() });
+            } else {
+              list.push({ as: unquote(as), from: asRelation(e[as]) });
+            }
           }
         }
       });
@@ -189,11 +200,11 @@ export class Query {
    * Retrieve current SAMPLE settings.
    * @returns {any[]}
    *//**
-   * Set SAMPLE settings.
-   * @param {number|object} value The percentage or number of rows to sample.
-   * @param {string} [method] The sampling method to use.
-   * @returns {this}
-   */
+* Set SAMPLE settings.
+* @param {number|object} value The percentage or number of rows to sample.
+* @param {string} [method] The sampling method to use.
+* @returns {this}
+*/
   sample(value, method) {
     const { query } = this;
     if (arguments.length === 0) {
@@ -203,8 +214,8 @@ export class Query {
       let spec = value;
       if (typeof value === 'number') {
         spec = value > 0 && value < 1
-            ? { perc: 100 * value, method }
-            : { rows: Math.round(value), method };
+          ? { perc: 100 * value, method }
+          : { rows: Math.round(value), method };
       }
       query.sample = spec;
       return this;
@@ -215,10 +226,10 @@ export class Query {
    * Retrieve current WHERE expressions.
    * @returns {any[]}
    *//**
-   * Add WHERE expressions.
-   * @param  {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add WHERE expressions.
+* @param  {...any} expr Expressions to add.
+* @returns {this}
+*/
   where(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -241,10 +252,10 @@ export class Query {
    * Retrieve current GROUP BY expressions.
    * @returns {any[]}
    *//**
-   * Add GROUP BY expressions.
-   * @param  {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add GROUP BY expressions.
+* @param  {...any} expr Expressions to add.
+* @returns {this}
+*/
   groupby(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -267,10 +278,10 @@ export class Query {
    * Retrieve current HAVING expressions.
    * @returns {any[]}
    *//**
-   * Add HAVING expressions.
-   * @param  {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add HAVING expressions.
+* @param  {...any} expr Expressions to add.
+* @returns {this}
+*/
   having(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -288,10 +299,10 @@ export class Query {
    * Retrieve current WINDOW definitions.
    * @returns {any[]}
    *//**
-   * Add WINDOW definitions.
-   * @param  {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add WINDOW definitions.
+* @param  {...any} expr Expressions to add.
+* @returns {this}
+*/
   window(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -317,10 +328,10 @@ export class Query {
    * Retrieve current QUALIFY expressions.
    * @returns {any[]}
    *//**
-   * Add QUALIFY expressions.
-   * @param  {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add QUALIFY expressions.
+* @param  {...any} expr Expressions to add.
+* @returns {this}
+*/
   qualify(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -338,10 +349,10 @@ export class Query {
    * Retrieve current ORDER BY expressions.
    * @returns {any[]}
    *//**
-   * Add ORDER BY expressions.
-   * @param  {...any} expr Expressions to add.
-   * @returns {this}
-   */
+* Add ORDER BY expressions.
+* @param  {...any} expr Expressions to add.
+* @returns {this}
+*/
   orderby(...expr) {
     const { query } = this;
     if (expr.length === 0) {
@@ -359,10 +370,10 @@ export class Query {
    * Retrieve current LIMIT value.
    * @returns {number|null}
    *//**
-   * Set the query result LIMIT.
-   * @param {number} value The limit value.
-   * @returns {this}
-   */
+* Set the query result LIMIT.
+* @param {number} value The limit value.
+* @returns {this}
+*/
   limit(value) {
     const { query } = this;
     if (arguments.length === 0) {
@@ -377,10 +388,10 @@ export class Query {
    * Retrieve current OFFSET value.
    * @returns {number|null}
    *//**
-   * Set the query result OFFSET.
-   * @param {number} value The offset value.
-   * @returns {this}
-   */
+* Set the query result OFFSET.
+* @param {number} value The offset value.
+* @returns {this}
+*/
   offset(value) {
     const { query } = this;
     if (arguments.length === 0) {
@@ -391,10 +402,15 @@ export class Query {
     }
   }
 
+  join(q, leftTable, leftKey, rightTable, rightKey) {
+    this.query.join = { query: q, leftTable, leftKey, rightTable, rightKey };
+    return this;
+  }
+
   get subqueries() {
     const { query, cteFor } = this;
     const ctes = (cteFor?.query || query).with;
-    const cte = ctes?.reduce((o, {as, query}) => (o[as] = query, o), {});
+    const cte = ctes?.reduce((o, { as, query }) => (o[as] = query, o), {});
     const q = [];
     query.from.forEach(({ from }) => {
       if (isQuery(from)) {
@@ -410,14 +426,15 @@ export class Query {
   toString() {
     const {
       with: cte, select, distinct, from, sample, where, groupby,
-      having, window, qualify, orderby, limit, offset
+      having, window, qualify, orderby, limit, offset,
+      distinctOn, join
     } = this.query;
 
     const sql = [];
 
     // WITH
     if (cte.length) {
-      const list = cte.map(({ as, query })=> `"${as}" AS (${query})`);
+      const list = cte.map(({ as, query }) => `"${as}" AS (${query})`);
       sql.push(`WITH ${list.join(', ')}`);
     }
 
@@ -427,7 +444,13 @@ export class Query {
         ? `${expr}`
         : `${expr} AS "${as}"`
     );
-    sql.push(`SELECT${distinct ? ' DISTINCT' : ''} ${sels.join(', ')}`);
+    let sString = 'SELECT';
+    if (distinct) {
+      sString += ' DISTINCT';
+    } else if (distinctOn) {
+      sString += ` DISTINCT ON (${asColumn(distinctOn)})`;
+    }
+    sql.push(`${sString} ${sels.join(', ')}`);
 
     // FROM
     if (from.length) {
@@ -436,6 +459,16 @@ export class Query {
         return !as || as === from.table ? rel : `${rel} AS "${as}"`;
       });
       sql.push(`FROM ${rels.join(', ')}`);
+    }
+
+    // JOIN
+    if (join) {
+      console.log("Writing joins in Query.toString()::: ", join)
+      sql.push(
+        `JOIN (${join.query.toString()}) _joinTable ON ${asRelation(
+          join.leftTable
+        )}.${asColumn(join.leftKey)} = _joinTable.${asColumn(join.rightKey)}`
+      );
     }
 
     // WHERE
@@ -550,7 +583,7 @@ export class SetOperation {
     const { op, queries, query: { orderby, limit, offset } } = this;
 
     // SUBQUERIES
-    const sql = [ queries.join(` ${op} `) ];
+    const sql = [queries.join(` ${op} `)];
 
     // ORDER BY
     if (orderby.length) {
@@ -571,6 +604,46 @@ export class SetOperation {
   }
 }
 
+export class FromJoinDistinctClause {
+  constructor({ table, rightTable, joinKey }) {
+    this.table = table;
+    this.rightTable = rightTable;
+    this.joinKey = joinKey;
+  }
+
+  /**
+   * Constructs a pretty gnarly SQL string that joins table and rightTable on joinKey, with
+   * distinct values for rightTable and ensures only one copy of the joinKey is returned.
+   * 
+   * NOTE: if table and rightTable have the same column names (other than joinKey) then 
+   * this might be buggy (esp for downstream functions)
+   * @returns {string} SQL string
+   */
+  getJoinString() {
+    let { table, rightTable, joinKey } = this;
+    let q2 = Query.from(rightTable).distinctOn(joinKey).select("*");
+
+    return `(SELECT ${asRelation(table)}.* EXCLUDE ${asColumn(
+      joinKey
+    )}, _joinTable.* FROM ${asColumn(
+      table
+    )} JOIN (${q2.toString()}) _joinTable ON ${asRelation(table)}.${asColumn(
+      joinKey
+    )} = _joinTable.${asColumn(joinKey)})`;
+  }
+
+  /**
+   * For string rep just return the main table name to mimic the from function
+   * @returns {string} the main table.
+   */
+  toString() {
+    // console.log("toString() called on FromJoinDistinctClause, returing only the table name but the full object is: ", this)
+    return String(this.table);
+  }
+}
+
+export const fromJoinDistinct = (...args) => new FromJoinDistinctClause(...args);
+
 export function isQuery(value) {
   return value instanceof Query || value instanceof SetOperation;
 }
@@ -584,5 +657,5 @@ function unquote(s) {
 }
 
 function isDoubleQuoted(s) {
-  return s[0] === '"' && s[s.length-1] === '"';
+  return s[0] === '"' && s[s.length - 1] === '"';
 }

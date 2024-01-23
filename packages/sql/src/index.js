@@ -130,7 +130,8 @@ export {
 export {
   Query,
   isQuery,
-  isDescribeQuery
+  isDescribeQuery,
+  fromJoinDistinct,
 } from './Query.js';
 
 export {
