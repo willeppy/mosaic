@@ -116,7 +116,7 @@ export class Table extends MosaicClient {
   }
 
   query(filter = []) {
-    const { from, limit, offset, schema, sortColumn, sortDesc } = this;
+    const { from, limit, offset, schema, sortColumn, sortDesc } = this;    
     return Query.from(from)
       .select(schema.map(s => s.column))
       .where(filter)

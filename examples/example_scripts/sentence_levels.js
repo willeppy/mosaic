@@ -38,16 +38,35 @@ export default async function getPlot(conn_type) {
   const chartHeight = 400;
   const marginL = 150;
 
+  /**
+   * 
+   * This works for the charts but does not for the table becuase needs just the table name;
+   * Can probably make a change to the table code to handle this better?
+   * 
+   */
+  function getSQLString({ table, rightTable, joinKey }) {
+    let q2 = vg.sql`SELECT DISTINCT ON (${vg.column(
+      joinKey
+    )}) * FROM ${vg.column(rightTable)}`;
+
+    return vg.sql`(SELECT ${vg.column(table)}.* EXCLUDE ${vg.column(
+      joinKey
+    )}, _joinTable.* FROM ${vg.column(
+      table
+    )} JOIN (${q2}) _joinTable ON ${vg.column(table)}.${vg.column(
+      joinKey
+    )} = _joinTable.${vg.column(joinKey)})`;
+  }
+
+  let l = getSQLString({table: "wordTable", rightTable: "mainTable", joinKey: "id"})
+
+
   return vg.hconcat(
     vg.vconcat(
       vg.plot(
         vg.barX(
-          vg.from("wordTable", {
+          vg.from(vg.fromJoinDistinct({table: "wordTable", rightTable: "mainTable", joinKey: "id"}), {
             filterBy: $query,
-            joinWith: {
-              rightTable: "mainTable",
-              joinKey: "id",
-            },
           }),
           {
             x: vg.count(),
@@ -64,12 +83,8 @@ export default async function getPlot(conn_type) {
       ),
       vg.plot(
         vg.barX(
-          vg.from("mainTable", {
+          vg.from(vg.fromJoinDistinct({table: "mainTable", rightTable: "wordTable", joinKey: "id"}), {
             filterBy: $query,
-            joinWith: {
-              rightTable: "wordTable",
-              joinKey: "id",
-            },
           }),
           {
             x: vg.count(),
@@ -83,28 +98,15 @@ export default async function getPlot(conn_type) {
         vg.toggleY({ as: $selectCat }),
         vg.marginLeft(marginL),
         vg.height(chartHeight)
-      )
-      // vg.plot(
-      //   vg.barX(vg.from("mainTable", { filterBy: $query }), {
-      //     x: vg.count(),
-      //     y: "author",
-      //     order: "author",
-      //     sort: { y: "-x", limit: LIMIT_N },
-      //   }),
-      //   vg.highlight({ by: $selectCat2 }),
-      //   vg.toggleY({ as: $query }),
-      //   vg.toggleY({ as: $selectCat2 }),
-      //   vg.marginLeft(marginL),
-      //   vg.height(chartHeight)
-      // )
-    )
-    // vg.hspace(50),
-    // vg.table({
-    //   from: "mainTable",
-    //   filterBy: $query,
-    //   maxWidth: 750,
-    //   height: 900,
-    //   width: { id: 20, message: 300, type: 50, author: 100, date: 100 },
-    // })
+      ),
+    ),
+    vg.hspace(50),
+    vg.table({
+      from: vg.fromJoinDistinct({table: "mainTable", rightTable: "wordTable", joinKey: "id"}),
+      filterBy: $query,
+      maxWidth: 750,
+      height: 900,
+      width: { id: 20, message: 300, type: 50, author: 100, date: 100 },
+    })
   );
 }
