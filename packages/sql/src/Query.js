@@ -629,7 +629,7 @@ export class FromJoinDistinctClause {
       table
     )} JOIN (${q2.toString()}) _joinTable ON ${asRelation(table)}.${asColumn(
       joinKey
-    )} = _joinTable.${asColumn(joinKey)})`;
+    )} = _joinTable.${asColumn(joinKey)} ORDER BY ${asRelation(table)}.${asColumn(joinKey)})`;
   }
 
   /**
