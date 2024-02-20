@@ -50,5 +50,13 @@ function rangeOp(op, a, range, exclusive) {
   return expr.annotate({ op, visit, field: a, range });
 }
 
+function arrOp(op, a, items) {
+  items = items.map(item => `'${item.toLowerCase()}'`).join(', ');
+  const expr = !items ? sql``
+    : sql`(LOWER(${asColumn(a)}) ${op} (${items}))`;
+  return expr.annotate({ op, visit, field: a, items });
+}
+
 export const isBetween = (a, range, exclusive) => rangeOp('BETWEEN', a, range, exclusive);
 export const isNotBetween = (a, range, exclusive) => rangeOp('NOT BETWEEN', a, range, exclusive);
+export const isNotIn = (a, items) => arrOp('NOT IN', a, items);
