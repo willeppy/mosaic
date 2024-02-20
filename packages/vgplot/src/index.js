@@ -26,7 +26,7 @@ export {
   and, or, not, eq, neq, gt, gte, lt, lte,
   isBetween, isNotBetween,
   isDistinct, isNotDistinct,
-  isNull, isNotNull,
+  isNull, isNotNull, isNotIn,
   loadCSV, loadJSON, loadObjects, loadParquet
 } from '@uwdata/mosaic-sql';
 
