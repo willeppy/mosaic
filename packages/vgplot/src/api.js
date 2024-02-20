@@ -62,7 +62,8 @@ export {
   centroid, centroidX, centroidY, geojson,
   create, loadExtension,
   loadCSV, loadJSON, loadObjects, loadParquet, loadSpatial,
-  fromJoinDistinct
+  fromJoinDistinct,
+  isNotIn,
 } from '@uwdata/mosaic-sql';
 
 export {
