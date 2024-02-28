@@ -1,4 +1,4 @@
-import { or } from '@uwdata/mosaic-sql';
+import { or, sql } from '@uwdata/mosaic-sql';
 import { Param } from './Param.js';
 
 /**
@@ -264,10 +264,14 @@ export class SelectionResolver {
     // do nothing if cross-filtering and client is currently active
     if (this.skip(client, active)) return undefined;
 
+    // get table name, passed as different param for Mark or Table 
+    // TODO in future inclue this as standard in client spec
+    const appliedToTableName = client?.source?.table ?? client?.from;
+
     // remove client-specific predicates if cross-filtering
     const predicates = clauseList
       .filter(clause => !this.skip(client, clause))
-      .map(clause => clause.predicate);
+      .map(clause => formatPredicateBySource(clause.predicate, getOriginatingTable(clause), appliedToTableName, "id")); // TODO in future don't hard code id
 
     // return appropriate conjunction or disjunction
     // an array of predicates is implicitly conjunctive
@@ -285,5 +289,41 @@ export class SelectionResolver {
       const source = value.active?.source;
       return clauses => clauses.active?.source !== source;
     }
+  }
+}
+
+/**
+ *
+ * @param {*} predicate
+ * @param {string} clauseOrigTableName name of table where selection clause comes from
+ * @param {string} appliedToTableName name of table selection is being applied to
+ * @param {string} idCcol name of column to join these two tables (TODO include this in spec in future)
+ * @returns {*} a SQL expression with predicate wrapped appropriatley
+ */
+function formatPredicateBySource(
+  predicate,
+  clauseOrigTableName = undefined,
+  appliedToTableName = undefined,
+  idCol = "id",
+) {
+  // clause comes from and is applied to same table
+  if (
+    !appliedToTableName ||
+    !clauseOrigTableName ||
+    clauseOrigTableName === appliedToTableName
+  ) {
+    return predicate;
+  }
+
+  // clause comes from and is applied to different tables
+  return sql`(EXISTS (SELECT 1 FROM "${clauseOrigTableName}" WHERE "source"."${idCol}" = "${clauseOrigTableName}"."${idCol}" AND ${predicate}))`;
+}
+
+function getOriginatingTable(clause) {
+  try {
+    return Array.from(clause.clients)[0].source.table;
+  } catch (error) {
+    console.warn("Unable to get originating table for clause: ", clause);
+    return undefined;
   }
 }
