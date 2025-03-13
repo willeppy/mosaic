@@ -298,7 +298,7 @@ export class SelectionResolver {
  * @param {*} predicate
  * @param {string} clauseOrigTableName name of table where selection clause comes from
  * @param {string} appliedToTableName name of table selection is being applied to
- * @param {string} idCcol name of column to join these two tables (TODO include this in spec in future)
+ * @param {string} idCol name of column to join these two tables (TODO include this in spec in future)
  * @returns {*} a SQL expression with predicate wrapped appropriatley
  */
 function formatPredicateBySource(
